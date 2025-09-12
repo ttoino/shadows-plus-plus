@@ -51,8 +51,8 @@
         system: with pkgsFor.${system}; {
           default = mkShell.override { stdenv = gcc14Stdenv; } {
             name = "shadows-plus-plus";
-            buildInputs = [ hyprland.packages.${system}.hyprland ];
-            inputsFrom = [ hyprland.packages.${system}.hyprland ];
+            buildInputs = [ hyprland.packages.${system}.hyprland-debug ];
+            inputsFrom = [ hyprland.packages.${system}.hyprland-debug ];
           };
         }
       );

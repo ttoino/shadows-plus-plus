@@ -1,0 +1,11 @@
+[repository]
+name = "shadows-plus-plus"
+authors = ["toino"]
+
+[shadows-plus-plus]
+description = "A plugin to add CSS's box shadows to windows."
+authors = ["toino"]
+output = "shadows-plus-plus.so"
+build = [
+    "make all"
+]
