@@ -117,8 +117,8 @@ void CBoxShadowsDecoration::render(PHLMONITOR pMonitor, float const &a) {
   const auto PWINDOW = m_window.lock();
 
   if (!validMapped(PWINDOW) ||
-      !PWINDOW->m_windowData.decorate.valueOrDefault() ||
-      PWINDOW->m_windowData.noShadow.valueOrDefault())
+      !PWINDOW->m_ruleApplicator->decorate().valueOrDefault() ||
+      PWINDOW->m_ruleApplicator->noShadow().valueOrDefault())
     return;
 
   static auto *const PSHADOWS =
