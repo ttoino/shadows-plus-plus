@@ -1,10 +1,8 @@
 [shadows-plus-plus]
 description = "A plugin to add CSS's box shadows to windows."
 version = "1.0"
-authors = ["toino"]
+author = "toino"
 
-[shadows-plus-plus]
+[shadows-plus-plus.build]
 output = "shadows-plus-plus.so"
-steps = [
-    "make all"
-]
+steps = ["make all"]
