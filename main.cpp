@@ -1,9 +1,9 @@
 #include <unistd.h>
 
-#include <any>
 #include <hyprland/src/Compositor.hpp>
 #include <hyprland/src/config/ConfigManager.hpp>
 #include <hyprland/src/desktop/view/Window.hpp>
+#include <hyprland/src/event/EventBus.hpp>
 #include <hyprland/src/render/Renderer.hpp>
 
 #include "CBoxShadowsDecoration.hpp"
@@ -12,12 +12,9 @@
 // Do NOT change this function.
 APICALL EXPORT std::string PLUGIN_API_VERSION() { return HYPRLAND_API_VERSION; }
 
-void onNewWindow(void *self, std::any data) {
-  // data is guaranteed
-  const auto PWINDOW = std::any_cast<PHLWINDOW>(data);
-
-  HyprlandAPI::addWindowDecoration(PHANDLE, PWINDOW,
-                                   makeUnique<CBoxShadowsDecoration>(PWINDOW));
+void onNewWindow(PHLWINDOW window) {
+  HyprlandAPI::addWindowDecoration(PHANDLE, window,
+                                   makeUnique<CBoxShadowsDecoration>(window));
 }
 
 APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
@@ -57,11 +54,8 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
 
   HyprlandAPI::reloadConfig();
 
-  static auto P = HyprlandAPI::registerCallbackDynamic(
-      PHANDLE, "openWindow",
-      [&](void *self, SCallbackInfo &info, std::any data) {
-        onNewWindow(self, data);
-      });
+  static auto P = Event::bus()->m_events.window.open.listen(
+      [&](PHLWINDOW window) { onNewWindow(window); });
 
   // add deco to existing windows
   for (auto &w : g_pCompositor->m_windows) {
