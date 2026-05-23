@@ -2,6 +2,7 @@
 #include "CBoxShadowsDecoration.hpp"
 
 #include <hyprland/src/render/OpenGL.hpp>
+#include <hyprland/src/render/Renderer.hpp>
 
 CBoxShadowsPassElement::CBoxShadowsPassElement(
     const CBoxShadowsPassElement::SShadowData &data_)
@@ -9,8 +10,9 @@ CBoxShadowsPassElement::CBoxShadowsPassElement(
   ;
 }
 
-void CBoxShadowsPassElement::draw(const CRegion &damage) {
-  m_data.deco->render(g_pHyprOpenGL->m_renderData.pMonitor.lock(), m_data.a);
+std::vector<UP<IPassElement>> CBoxShadowsPassElement::draw() {
+  m_data.deco->render(g_pHyprRenderer->m_renderData.pMonitor.lock(), m_data.a);
+  return {};
 }
 
 bool CBoxShadowsPassElement::needsLiveBlur() { return false; }

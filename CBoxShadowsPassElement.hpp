@@ -14,11 +14,13 @@ public:
   CBoxShadowsPassElement(const SShadowData &data_);
   virtual ~CBoxShadowsPassElement() = default;
 
-  virtual void draw(const CRegion &damage);
-  virtual bool needsLiveBlur();
-  virtual bool needsPrecomputeBlur();
+  virtual std::vector<UP<IPassElement>> draw() override;
+  virtual bool needsLiveBlur() override;
+  virtual bool needsPrecomputeBlur() override;
 
-  virtual const char *passName() { return "CBoxShadowsPassElement"; }
+  virtual const char *passName() override { return "CBoxShadowsPassElement"; }
+
+  virtual ePassElementType type() override { return EK_CUSTOM; }
 
 private:
   SShadowData m_data;

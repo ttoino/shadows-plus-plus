@@ -2,10 +2,13 @@
 #include "CBoxShadowsPassElement.hpp"
 #include "globals.hpp"
 
+#include <algorithm>
 #include <hyprland/src/Compositor.hpp>
 #include <hyprland/src/desktop/view/Window.hpp>
 #include <hyprland/src/plugins/PluginAPI.hpp>
 #include <hyprland/src/render/Renderer.hpp>
+
+using namespace Render::GL;
 
 CBoxShadowsDecoration::CBoxShadowsDecoration(PHLWINDOW pWindow)
     : IHyprWindowDecoration(pWindow), m_window(pWindow) {}
@@ -36,13 +39,15 @@ uint64_t CBoxShadowsDecoration::getDecorationFlags() {
 
 std::string CBoxShadowsDecoration::getDisplayName() { return "Box Shadows"; }
 
-void CBoxShadowsDecoration::damageEntire() {
-  static auto *const PSHADOWS =
-      (Hyprlang::INT *const *)HyprlandAPI::getConfigValue(
-          PHANDLE, "plugin:shadows-plus-plus:add_shadows")
-          ->getDataStaticPtr();
+static size_t shadowCount() {
+  return std::clamp<Config::INTEGER>(
+      vars.addShadows->value(), 0,
+      static_cast<Config::INTEGER>(vars.shadowIgnoreWindows.size()));
+}
 
-  if (**PSHADOWS == 0)
+void CBoxShadowsDecoration::damageEntire() {
+  const size_t NUMSHADOWS = shadowCount();
+  if (NUMSHADOWS == 0)
     return;
 
   const auto PWINDOW = m_window.lock();
@@ -60,21 +65,13 @@ void CBoxShadowsDecoration::damageEntire() {
     shadowBox.translate(PWORKSPACE->m_renderOffset->value());
   shadowBox.translate(PWINDOW->m_floatingOffset);
 
-  static std::vector<Hyprlang::INT *const *> PSHADOWSIGNOREWINDOW;
-  for (size_t i = 1; i <= 10; ++i)
-    PSHADOWSIGNOREWINDOW.push_back(
-        (Hyprlang::INT *const *)HyprlandAPI::getConfigValue(
-            PHANDLE, "plugin:shadows-plus-plus:shadow_" + std::to_string(i) +
-                         ":ignore_window")
-            ->getDataStaticPtr());
-
   const auto ROUNDING = PWINDOW->rounding();
   const auto ROUNDINGSIZE = ROUNDING - M_SQRT1_2 * ROUNDING + 1;
 
   CRegion shadowRegion(shadowBox);
-  if (std::all_of(PSHADOWSIGNOREWINDOW.begin(),
-                  PSHADOWSIGNOREWINDOW.begin() + **PSHADOWS,
-                  [](auto *const shadow) { return **shadow; })) {
+  if (std::all_of(vars.shadowIgnoreWindows.begin(),
+                  vars.shadowIgnoreWindows.begin() + NUMSHADOWS,
+                  [](const auto &shadow) { return shadow->value(); })) {
     CBox surfaceBox = PWINDOW->getWindowMainSurfaceBox();
     if (PWORKSPACE && PWORKSPACE->m_renderOffset->isBeingAnimated() &&
         !PWINDOW->m_pinned)
@@ -121,44 +118,9 @@ void CBoxShadowsDecoration::render(PHLMONITOR pMonitor, float const &a) {
       PWINDOW->m_ruleApplicator->noShadow().valueOrDefault())
     return;
 
-  static auto *const PSHADOWS =
-      (Hyprlang::INT *const *)HyprlandAPI::getConfigValue(
-          PHANDLE, "plugin:shadows-plus-plus:add_shadows")
-          ->getDataStaticPtr();
-
-  if (**PSHADOWS == 0)
+  const size_t NUMSHADOWS = shadowCount();
+  if (NUMSHADOWS == 0)
     return;
-
-  static std::vector<Hyprlang::INT *const *> PCOLORS;
-  static std::vector<Hyprlang::VEC2 *const *> POFFSETS;
-  static std::vector<Hyprlang::INT *const *> PBLURRADII;
-  static std::vector<Hyprlang::INT *const *> PSPREADRADII;
-  static std::vector<Hyprlang::INT *const *> PIGNOREWINDOWS;
-  static std::vector<Hyprlang::FLOAT *const *> PSCALES;
-
-  for (size_t i = 1; i <= 10; ++i) {
-    const std::string base =
-        "plugin:shadows-plus-plus:shadow_" + std::to_string(i);
-    PCOLORS.push_back((Hyprlang::INT *const *)HyprlandAPI::getConfigValue(
-                          PHANDLE, base + ":color")
-                          ->getDataStaticPtr());
-    POFFSETS.push_back((Hyprlang::VEC2 *const *)HyprlandAPI::getConfigValue(
-                           PHANDLE, base + ":offset")
-                           ->getDataStaticPtr());
-    PBLURRADII.push_back((Hyprlang::INT *const *)HyprlandAPI::getConfigValue(
-                             PHANDLE, base + ":blur_radius")
-                             ->getDataStaticPtr());
-    PSPREADRADII.push_back((Hyprlang::INT *const *)HyprlandAPI::getConfigValue(
-                               PHANDLE, base + ":spread_radius")
-                               ->getDataStaticPtr());
-    PIGNOREWINDOWS.push_back(
-        (Hyprlang::INT *const *)HyprlandAPI::getConfigValue(
-            PHANDLE, base + ":ignore_window")
-            ->getDataStaticPtr());
-    PSCALES.push_back((Hyprlang::FLOAT *const *)HyprlandAPI::getConfigValue(
-                          PHANDLE, base + ":scale")
-                          ->getDataStaticPtr());
-  }
 
   const auto ROUNDINGBASE = PWINDOW->rounding();
   const auto ROUNDINGPOWER = PWINDOW->roundingPower();
@@ -173,15 +135,16 @@ void CBoxShadowsDecoration::render(PHLMONITOR pMonitor, float const &a) {
   m_lastWindowPos += WORKSPACEOFFSET;
 
   g_pHyprOpenGL->scissor(nullptr);
-  g_pHyprOpenGL->m_renderData.currentWindow = m_window;
+  g_pHyprRenderer->m_renderData.currentWindow = m_window;
 
-  for (size_t i = 0; i < **PSHADOWS; ++i) {
-    const CHyprColor PCOLOR{(uint64_t)**PCOLORS.at(i)};
-    const auto POFFSET = **POFFSETS.at(i);
-    const auto PBLURRADIUS = **PBLURRADII.at(i);
-    const auto PSPREADRADIUS = **PSPREADRADII.at(i);
-    const auto PIGNOREWINDOW = **PIGNOREWINDOWS.at(i);
-    const auto PSCALE = std::clamp(**PSCALES.at(i), 0.f, 1.f);
+  for (size_t i = 0; i < NUMSHADOWS; ++i) {
+    const CHyprColor PCOLOR{
+        static_cast<uint64_t>(vars.shadowColors[i]->value())};
+    const auto POFFSET = vars.shadowOffsets[i]->value();
+    const auto PBLURRADIUS = vars.shadowBlurRadii[i]->value();
+    const auto PSPREADRADIUS = vars.shadowSpreadRadii[i]->value();
+    const auto PIGNOREWINDOW = vars.shadowIgnoreWindows[i]->value();
+    const auto PSCALE = std::clamp(vars.shadowScales[i]->value(), 0.f, 1.f);
 
     const auto PSIZE = PBLURRADIUS + PSPREADRADIUS;
     CBox box = m_lastWindowBoxWithDecos;
@@ -215,6 +178,8 @@ void CBoxShadowsDecoration::render(PHLMONITOR pMonitor, float const &a) {
 
     box.scale(pMonitor->m_scale).round();
 
+    // TODO: Handle ignore_window case
+
     drawShadowInternal(box, (ROUNDING + PSPREADRADIUS) * pMonitor->m_scale,
                        ROUNDINGPOWER, PBLURRADIUS * pMonitor->m_scale, PCOLOR,
                        a);
@@ -223,7 +188,7 @@ void CBoxShadowsDecoration::render(PHLMONITOR pMonitor, float const &a) {
   if (m_extents != m_reportedExtents)
     g_pDecorationPositioner->repositionDeco(this);
 
-  g_pHyprOpenGL->m_renderData.currentWindow.reset();
+  g_pHyprRenderer->m_renderData.currentWindow.reset();
 }
 
 eDecorationLayer CBoxShadowsDecoration::getDecorationLayer() {

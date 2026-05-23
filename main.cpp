@@ -1,5 +1,6 @@
 #include <unistd.h>
 
+#include <array>
 #include <hyprland/src/Compositor.hpp>
 #include <hyprland/src/config/ConfigManager.hpp>
 #include <hyprland/src/desktop/view/Window.hpp>
@@ -12,7 +13,12 @@
 // Do NOT change this function.
 APICALL EXPORT std::string PLUGIN_API_VERSION() { return HYPRLAND_API_VERSION; }
 
-void onNewWindow(PHLWINDOW window) {
+static void onNewWindow(PHLWINDOW window) {
+  if (std::ranges::any_of(window->m_windowDecorations, [](const auto &d) {
+        return d->getDisplayName() == "Box Shadows";
+      }))
+    return;
+
   HyprlandAPI::addWindowDecoration(PHANDLE, window,
                                    makeUnique<CBoxShadowsDecoration>(window));
 }
@@ -32,24 +38,34 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
     throw std::runtime_error("[bpp] Version mismatch");
   }
 
-  HyprlandAPI::addConfigValue(PHANDLE, "plugin:shadows-plus-plus:add_shadows",
-                              Hyprlang::INT{1});
+  vars.addShadows = makeShared<Config::Values::CIntValue>(
+      "plugin:shadows-plus-plus:add_shadows", "How many extra shadows to draw",
+      1, Config::Values::SIntValueOptions{.min = 0, .max = 10});
+  HyprlandAPI::addConfigValueV2(PHANDLE, vars.addShadows);
 
-  for (size_t i = 1; i <= 10; ++i) {
+  for (size_t i = 0; i < 10; ++i) {
     const std::string base =
-        "plugin:shadows-plus-plus:shadow_" + std::to_string(i);
-    HyprlandAPI::addConfigValue(PHANDLE, base + ":color",
-                                Hyprlang::INT{0xee1a1a1a});
-    HyprlandAPI::addConfigValue(PHANDLE, base + ":offset",
-                                Hyprlang::VEC2{0, 0});
-    HyprlandAPI::addConfigValue(PHANDLE, base + ":blur_radius",
-                                Hyprlang::INT{3});
-    HyprlandAPI::addConfigValue(PHANDLE, base + ":spread_radius",
-                                Hyprlang::INT{4});
-    // HyprlandAPI::addConfigValue(PHANDLE, base + ":inset", Hyprlang::INT{0});
-    HyprlandAPI::addConfigValue(PHANDLE, base + ":ignore_window",
-                                Hyprlang::INT{1});
-    HyprlandAPI::addConfigValue(PHANDLE, base + ":scale", Hyprlang::FLOAT{1.f});
+        "plugin:shadows-plus-plus:shadow_" + std::to_string(i + 1);
+    vars.shadowColors[i] = makeShared<Config::Values::CColorValue>(
+        (base + ":color").c_str(), "Color of the shadow", 0xee1a1a1a);
+    vars.shadowOffsets[i] = makeShared<Config::Values::CVec2Value>(
+        (base + ":offset").c_str(), "Offset of the shadow", Config::VEC2{0, 0});
+    vars.shadowBlurRadii[i] = makeShared<Config::Values::CIntValue>(
+        (base + ":blur_radius").c_str(), "Blur radius of the shadow", 3);
+    vars.shadowSpreadRadii[i] = makeShared<Config::Values::CIntValue>(
+        (base + ":spread_radius").c_str(), "Spread radius of the shadow", 4);
+    vars.shadowIgnoreWindows[i] = makeShared<Config::Values::CBoolValue>(
+        (base + ":ignore_window").c_str(),
+        "Whether the shadow ignores the window", true);
+    vars.shadowScales[i] = makeShared<Config::Values::CFloatValue>(
+        (base + ":scale").c_str(), "Scale of the shadow", 1.f);
+
+    HyprlandAPI::addConfigValueV2(PHANDLE, vars.shadowColors[i]);
+    HyprlandAPI::addConfigValueV2(PHANDLE, vars.shadowOffsets[i]);
+    HyprlandAPI::addConfigValueV2(PHANDLE, vars.shadowBlurRadii[i]);
+    HyprlandAPI::addConfigValueV2(PHANDLE, vars.shadowSpreadRadii[i]);
+    HyprlandAPI::addConfigValueV2(PHANDLE, vars.shadowIgnoreWindows[i]);
+    HyprlandAPI::addConfigValueV2(PHANDLE, vars.shadowScales[i]);
   }
 
   HyprlandAPI::reloadConfig();
