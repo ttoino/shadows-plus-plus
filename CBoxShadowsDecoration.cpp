@@ -126,10 +126,13 @@ void CBoxShadowsDecoration::render(PHLMONITOR pMonitor, float const &a) {
   if (NUMSHADOWS == 0)
     return;
 
+  const auto BORDERSIZE = PWINDOW->getRealBorderSize();
   const auto ROUNDINGBASE = PWINDOW->rounding();
   const auto ROUNDINGPOWER = PWINDOW->roundingPower();
+  const auto CORRECTIONOFFSET =
+      BORDERSIZE * (M_SQRT2 - 1) * std::max(2.0 - ROUNDINGPOWER, 0.0);
   const auto ROUNDING =
-      ROUNDINGBASE > 0 ? ROUNDINGBASE + PWINDOW->getRealBorderSize() : 0;
+      ROUNDINGBASE > 0 ? (ROUNDINGBASE + BORDERSIZE) - CORRECTIONOFFSET : 0;
   const auto PWORKSPACE = PWINDOW->m_workspace;
   const auto WORKSPACEOFFSET = PWORKSPACE && !PWINDOW->m_pinned
                                    ? PWORKSPACE->m_renderOffset->value()
