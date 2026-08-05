@@ -3,6 +3,7 @@
 #include <array>
 #include <hyprland/src/Compositor.hpp>
 #include <hyprland/src/config/ConfigManager.hpp>
+#include <hyprland/src/desktop/state/WindowState.hpp>
 #include <hyprland/src/desktop/view/Window.hpp>
 #include <hyprland/src/event/EventBus.hpp>
 #include <hyprland/src/render/Renderer.hpp>
@@ -74,7 +75,7 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
       [&](PHLWINDOW window) { onNewWindow(window); });
 
   // add deco to existing windows
-  for (auto &w : g_pCompositor->m_windows) {
+  for (auto &w : Desktop::windowState()->windows()) {
     if (w->isHidden() || !w->m_isMapped)
       continue;
 

@@ -7,6 +7,7 @@
 #include <hyprland/src/desktop/view/Window.hpp>
 #include <hyprland/src/plugins/PluginAPI.hpp>
 #include <hyprland/src/render/Renderer.hpp>
+#include <hyprland/src/state/MonitorState.hpp>
 
 using namespace Render::GL;
 
@@ -52,12 +53,15 @@ void CBoxShadowsDecoration::damageEntire() {
 
   const auto PWINDOW = m_window.lock();
 
-  CBox shadowBox = {PWINDOW->m_realPosition->value().x - m_extents.topLeft.x,
-                    PWINDOW->m_realPosition->value().y - m_extents.topLeft.y,
-                    PWINDOW->m_realSize->value().x + m_extents.topLeft.x +
-                        m_extents.bottomRight.x,
-                    PWINDOW->m_realSize->value().y + m_extents.topLeft.y +
-                        m_extents.bottomRight.y};
+  const auto WINDOWPOS =
+      PWINDOW->position(Desktop::View::IGeometric::GEOMETRIC_CURRENT);
+  const auto WINDOWSIZE =
+      PWINDOW->size(Desktop::View::IGeometric::GEOMETRIC_CURRENT);
+
+  CBox shadowBox = {
+      WINDOWPOS.x - m_extents.topLeft.x, WINDOWPOS.y - m_extents.topLeft.y,
+      WINDOWSIZE.x + m_extents.topLeft.x + m_extents.bottomRight.x,
+      WINDOWSIZE.y + m_extents.topLeft.y + m_extents.bottomRight.y};
 
   const auto PWORKSPACE = PWINDOW->m_workspace;
   if (PWORKSPACE && PWORKSPACE->m_renderOffset->isBeingAnimated() &&
@@ -81,9 +85,9 @@ void CBoxShadowsDecoration::damageEntire() {
     shadowRegion.subtract(CRegion(surfaceBox));
   }
 
-  for (auto const &m : g_pCompositor->m_monitors) {
+  for (auto const &m : State::monitorState()->monitors()) {
     if (!g_pHyprRenderer->shouldRenderWindow(PWINDOW, m)) {
-      const CRegion monitorRegion({m->m_position, m->m_size});
+      const CRegion monitorRegion(CBox{m->m_position, m->m_size});
       shadowRegion.subtract(monitorRegion);
     }
   }
@@ -94,8 +98,10 @@ void CBoxShadowsDecoration::damageEntire() {
 void CBoxShadowsDecoration::updateWindow(PHLWINDOW pWindow) {
   const auto PWINDOW = m_window.lock();
 
-  m_lastWindowPos = PWINDOW->m_realPosition->value();
-  m_lastWindowSize = PWINDOW->m_realSize->value();
+  m_lastWindowPos =
+      PWINDOW->position(Desktop::View::IGeometric::GEOMETRIC_CURRENT);
+  m_lastWindowSize =
+      PWINDOW->size(Desktop::View::IGeometric::GEOMETRIC_CURRENT);
 
   m_lastWindowBox = {m_lastWindowPos.x, m_lastWindowPos.y, m_lastWindowSize.x,
                      m_lastWindowSize.y};
