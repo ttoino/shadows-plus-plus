@@ -9,8 +9,6 @@
 #include <hyprland/src/render/Renderer.hpp>
 #include <hyprland/src/state/MonitorState.hpp>
 
-using namespace Render::GL;
-
 CBoxShadowsDecoration::CBoxShadowsDecoration(PHLWINDOW pWindow)
     : IHyprWindowDecoration(pWindow), m_window(pWindow) {}
 
@@ -113,7 +111,7 @@ void CBoxShadowsDecoration::draw(PHLMONITOR pMonitor, float const &a) {
   CBoxShadowsPassElement::SShadowData data;
   data.deco = this;
   data.a = a;
-  g_pHyprRenderer->m_renderPass.add(makeUnique<CBoxShadowsPassElement>(data));
+  g_pHyprRenderer->addPassElement(makeUnique<CBoxShadowsPassElement>(data));
 }
 
 void CBoxShadowsDecoration::render(PHLMONITOR pMonitor, float const &a) {
@@ -140,7 +138,7 @@ void CBoxShadowsDecoration::render(PHLMONITOR pMonitor, float const &a) {
   updateWindow(PWINDOW);
   m_lastWindowPos += WORKSPACEOFFSET;
 
-  g_pHyprOpenGL->scissor(nullptr);
+  g_pHyprRenderer->disableScissor();
   g_pHyprRenderer->m_renderData.currentWindow = m_window;
 
   for (size_t i = 0; i < NUMSHADOWS; ++i) {
@@ -208,10 +206,10 @@ void CBoxShadowsDecoration::drawShadowInternal(const CBox &box, int round,
   if (box.w < 1 || box.h < 1)
     return;
 
-  g_pHyprOpenGL->blend(true);
+  g_pHyprRenderer->blend(true);
 
   color.a *= a;
 
-  g_pHyprOpenGL->renderRoundedShadow(box, round, roundingPower, 2 * blurRadius,
-                                     color, 1.F);
+  g_pHyprRenderer->drawShadow(box, round, roundingPower, 2 * blurRadius,
+                              Config::CGradientValueData{color}, a);
 }

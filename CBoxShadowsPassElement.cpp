@@ -1,7 +1,6 @@
 #include "CBoxShadowsPassElement.hpp"
 #include "CBoxShadowsDecoration.hpp"
 
-#include <hyprland/src/render/OpenGL.hpp>
 #include <hyprland/src/render/Renderer.hpp>
 
 CBoxShadowsPassElement::CBoxShadowsPassElement(
