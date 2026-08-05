@@ -10,6 +10,7 @@
 
 #include "CBoxShadowsDecoration.hpp"
 #include "globals.hpp"
+#include "shadowsLua.hpp"
 
 // Do NOT change this function.
 APICALL EXPORT std::string PLUGIN_API_VERSION() { return HYPRLAND_API_VERSION; }
@@ -70,6 +71,8 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
   }
 
   HyprlandAPI::reloadConfig();
+
+  ShadowsPlusPlus::registerLuaFunctions();
 
   static auto P = Event::bus()->m_events.window.open.listen(
       [&](PHLWINDOW window) { onNewWindow(window); });

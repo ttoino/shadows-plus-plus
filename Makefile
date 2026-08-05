@@ -9,7 +9,7 @@ CXXFLAGS ?= -O2
 CXXFLAGS += -shared -fPIC -std=c++2b
 
 all:
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) $(EXTRA_FLAGS) main.cpp CBoxShadowsDecoration.cpp CBoxShadowsPassElement.cpp -o shadows-plus-plus.so `pkg-config --cflags pixman-1 libdrm hyprland pangocairo libinput libudev wayland-server xkbcommon`
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) $(EXTRA_FLAGS) main.cpp CBoxShadowsDecoration.cpp CBoxShadowsPassElement.cpp shadowsLua.cpp -o shadows-plus-plus.so `pkg-config --cflags pixman-1 libdrm hyprland pangocairo libinput libudev wayland-server xkbcommon`
 
 clean:
 	rm ./shadows-plus-plus.so
