@@ -151,13 +151,13 @@ void CBoxShadowsDecoration::render(PHLMONITOR pMonitor, float const &a) {
   g_pHyprRenderer->m_renderData.currentWindow = m_window;
 
   for (size_t i = 0; i < NUMSHADOWS; ++i) {
-    const CHyprColor PCOLOR{
-        static_cast<uint64_t>(vars.shadowColors[i]->value())};
+    const auto &PCOLOR = vars.shadowColors[i]->value();
     const auto POFFSET = vars.shadowOffsets[i]->value();
     const auto PBLURRADIUS = vars.shadowBlurRadii[i]->value();
     const auto PSPREADRADIUS = vars.shadowSpreadRadii[i]->value();
     const auto PIGNOREWINDOW = vars.shadowIgnoreWindows[i]->value();
     const auto PSCALE = std::clamp(vars.shadowScales[i]->value(), 0.f, 1.f);
+    const auto PSHARP = vars.shadowSharps[i]->value();
 
     const auto PSIZE = PBLURRADIUS + PSPREADRADIUS;
     CBox box = m_lastWindowBoxWithDecos;
@@ -194,11 +194,11 @@ void CBoxShadowsDecoration::render(PHLMONITOR pMonitor, float const &a) {
     if (PIGNOREWINDOW)
       drawShadowClipped(
           box, windowBox, (ROUNDING + PSPREADRADIUS) * pMonitor->m_scale,
-          ROUNDINGPOWER, PBLURRADIUS * pMonitor->m_scale, PCOLOR, a);
+          ROUNDINGPOWER, PBLURRADIUS * pMonitor->m_scale, PCOLOR, PSHARP, a);
     else
       drawShadowInternal(box, (ROUNDING + PSPREADRADIUS) * pMonitor->m_scale,
                          ROUNDINGPOWER, PBLURRADIUS * pMonitor->m_scale, PCOLOR,
-                         a);
+                         PSHARP, a);
   }
 
   if (m_extents != m_reportedExtents)
@@ -211,28 +211,38 @@ eDecorationLayer CBoxShadowsDecoration::getDecorationLayer() {
   return DECORATION_LAYER_BOTTOM;
 }
 
-void CBoxShadowsDecoration::drawShadowInternal(const CBox &box, int round,
-                                               float roundingPower,
-                                               int blurRadius, CHyprColor color,
-                                               float a) {
+void CBoxShadowsDecoration::drawShadowInternal(
+    const CBox &box, int round, float roundingPower, int blurRadius,
+    const Config::CGradientValueData &grad, bool sharp, float a) {
   if (box.w < 1 || box.h < 1)
     return;
 
   g_pHyprRenderer->blend(true);
 
-  color.a *= a;
+  if (sharp) {
+    CHyprColor flatColor =
+        grad.m_colors.empty() ? CHyprColor(0, 0, 0, 0) : grad.m_colors[0];
+    flatColor.a *= a;
+    g_pHyprRenderer->draw(
+        CRectPassElement::SRectData{.box = box,
+                                    .color = flatColor,
+                                    .round = round,
+                                    .roundingPower = roundingPower},
+        box);
+    return;
+  }
 
-  g_pHyprRenderer->drawShadow(box, round, roundingPower, 2 * blurRadius,
-                              Config::CGradientValueData{color}, a);
+  g_pHyprRenderer->drawShadow(box, round, roundingPower, 2 * blurRadius, grad,
+                              a);
 }
 
-void CBoxShadowsDecoration::drawShadowClipped(const CBox &shadowBox,
-                                              const CBox &windowBox, int round,
-                                              float roundingPower,
-                                              int blurRadius, CHyprColor color,
-                                              float a) {
+void CBoxShadowsDecoration::drawShadowClipped(
+    const CBox &shadowBox, const CBox &windowBox, int round,
+    float roundingPower, int blurRadius, const Config::CGradientValueData &grad,
+    bool sharp, float a) {
   if (!shadowBox.overlaps(windowBox)) {
-    drawShadowInternal(shadowBox, round, roundingPower, blurRadius, color, a);
+    drawShadowInternal(shadowBox, round, roundingPower, blurRadius, grad, sharp,
+                       a);
     return;
   }
 
@@ -240,7 +250,8 @@ void CBoxShadowsDecoration::drawShadowClipped(const CBox &shadowBox,
     if (strip.width < 1 || strip.height < 1)
       return;
     Render::GL::g_pHyprOpenGL->scissor(strip);
-    drawShadowInternal(shadowBox, round, roundingPower, blurRadius, color, a);
+    drawShadowInternal(shadowBox, round, roundingPower, blurRadius, grad, sharp,
+                       a);
   };
 
   const CBox top = {shadowBox.x, shadowBox.y, shadowBox.width,

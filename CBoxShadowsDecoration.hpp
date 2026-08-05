@@ -1,5 +1,6 @@
 #pragma once
 
+#include <hyprland/src/config/shared/complex/ComplexDataTypes.hpp>
 #include <hyprland/src/render/decorations/IHyprWindowDecoration.hpp>
 
 class CBoxShadowsDecoration : public IHyprWindowDecoration {
@@ -40,9 +41,12 @@ private:
   CBox m_lastWindowBoxWithDecos = {0};
 
   void drawShadowInternal(const CBox &box, int round, float roundingPower,
-                          int blurRadius, CHyprColor color, float a);
+                          int blurRadius,
+                          const Config::CGradientValueData &grad, bool sharp,
+                          float a);
 
   void drawShadowClipped(const CBox &shadowBox, const CBox &windowBox,
                          int round, float roundingPower, int blurRadius,
-                         CHyprColor color, float a);
+                         const Config::CGradientValueData &grad, bool sharp,
+                         float a);
 };

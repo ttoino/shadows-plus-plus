@@ -4,10 +4,11 @@
 #include <hyprland/src/config/ConfigValue.hpp>
 #include <hyprland/src/config/lua/bindings/LuaBindingsInternal.hpp>
 #include <hyprland/src/config/lua/types/LuaConfigBool.hpp>
-#include <hyprland/src/config/lua/types/LuaConfigColor.hpp>
 #include <hyprland/src/config/lua/types/LuaConfigFloat.hpp>
+#include <hyprland/src/config/lua/types/LuaConfigGradient.hpp>
 #include <hyprland/src/config/lua/types/LuaConfigInt.hpp>
 #include <hyprland/src/config/lua/types/LuaConfigVec2.hpp>
+#include <hyprland/src/config/shared/complex/ComplexDataTypes.hpp>
 #include <hyprland/src/plugins/PluginAPI.hpp>
 #include <hyprutils/utils/ScopeGuard.hpp>
 
@@ -42,6 +43,14 @@ static void setConfigBool(const std::string &name, Config::BOOL value) {
   *cfg.ptr() = value;
 }
 
+static void setConfigGradient(const std::string &name,
+                              const Config::CGradientValueData &value) {
+  CConfigValue<Config::IComplexConfigValue> cfg(name);
+  auto *gradient = dynamic_cast<Config::CGradientValueData *>(cfg.ptr());
+  if (gradient)
+    *gradient = value;
+}
+
 static void setConfigVec2(const std::string &name, const Config::VEC2 &value) {
   CConfigValue<Config::VEC2> cfg(name);
   *cfg.ptr() = value;
@@ -68,9 +77,10 @@ static int parseAndSet(lua_State *L, const char *fieldName, Parser &&parser,
 static int parseShadowTable(lua_State *L, int index) {
   int ret = 0;
 
-  ret = parseAndSet<Lua::CLuaConfigColor, Config::INTEGER>(
-      L, "color", Lua::CLuaConfigColor(0), [&](const Config::INTEGER &v) {
-        setConfigInt(shadowKey(index, "color"), v);
+  ret = parseAndSet<Lua::CLuaConfigGradient, Config::CGradientValueData>(
+      L, "color", Lua::CLuaConfigGradient(CHyprColor{0}),
+      [&](const Config::CGradientValueData &v) {
+        setConfigGradient(shadowKey(index, "color"), v);
       });
   if (ret != 0)
     return ret;
@@ -107,6 +117,13 @@ static int parseShadowTable(lua_State *L, int index) {
   ret = parseAndSet<Lua::CLuaConfigFloat, Config::FLOAT>(
       L, "scale", Lua::CLuaConfigFloat(1.F), [&](const Config::FLOAT &v) {
         setConfigFloat(shadowKey(index, "scale"), v);
+      });
+  if (ret != 0)
+    return ret;
+
+  ret = parseAndSet<Lua::CLuaConfigBool, Config::BOOL>(
+      L, "sharp", Lua::CLuaConfigBool(false), [&](const Config::BOOL &v) {
+        setConfigBool(shadowKey(index, "sharp"), v);
       });
   if (ret != 0)
     return ret;

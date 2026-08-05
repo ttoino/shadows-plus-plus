@@ -15,15 +15,17 @@ plugin:shadows-plus-plus {
         color = rgba(0,0,0,.30)
     }
 
-    shadow_2 {
-        offset = 0 8
-        blur_radius = 12
-        spread_radius = 6
-        color = rgba(0,0,0,.15)
-    }
+     shadow_2 {
+         offset = 0 8
+         blur_radius = 12
+         spread_radius = 6
+         color = rgba(0,0,0,.15)
+     }
 
-    # Also supports :scale and :ignore_window like the default shadows
-}
+     # Also supports :scale, :ignore_window, :sharp like the default shadows
+     # :color also accepts gradient syntax, e.g.
+     # color = rgba(ff0000ff) rgba(00ff00ff) 45deg
+ }
 ```
 
 For the best results, I recommend disabling the default Hyprland shadows:
@@ -67,15 +69,29 @@ hl.plugin.shadows.set({
         spread_radius = 0,
         ignore_window = true,
         scale = 1.0,
-    },
-    {
-        color = "rgba(0,0,0,.15)",
-        offset = {0, 8},
-        blur_radius = 12,
-        spread_radius = 6,
-    },
-})
-```
+     },
+     {
+         color = "rgba(0,0,0,.15)",
+         offset = {0, 8},
+         blur_radius = 12,
+         spread_radius = 6,
+         sharp = true,
+     },
+ })
+ ```
+
+ Colors can also be set as gradients:
+
+ ```lua
+ hl.plugin.shadows.set({
+     {
+         color = {
+             colors = {"rgba(00000000)", "rgba(ff0000ff)", "rgba(00ff00ff)"},
+             angle = 45,
+         },
+     },
+ })
+ ```
 
 ### `hl.plugin.shadows.set(index, shadow)`
 
