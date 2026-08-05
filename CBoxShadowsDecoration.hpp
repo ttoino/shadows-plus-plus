@@ -41,4 +41,8 @@ private:
 
   void drawShadowInternal(const CBox &box, int round, float roundingPower,
                           int blurRadius, CHyprColor color, float a);
+
+  void drawShadowClipped(const CBox &shadowBox, const CBox &windowBox,
+                         int round, float roundingPower, int blurRadius,
+                         CHyprColor color, float a);
 };

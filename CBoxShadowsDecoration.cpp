@@ -6,6 +6,7 @@
 #include <hyprland/src/Compositor.hpp>
 #include <hyprland/src/desktop/view/Window.hpp>
 #include <hyprland/src/plugins/PluginAPI.hpp>
+#include <hyprland/src/render/OpenGL.hpp>
 #include <hyprland/src/render/Renderer.hpp>
 #include <hyprland/src/state/MonitorState.hpp>
 
@@ -141,6 +142,11 @@ void CBoxShadowsDecoration::render(PHLMONITOR pMonitor, float const &a) {
   updateWindow(PWINDOW);
   m_lastWindowPos += WORKSPACEOFFSET;
 
+  CBox windowBox = {m_lastWindowPos.x, m_lastWindowPos.y, m_lastWindowSize.x,
+                    m_lastWindowSize.y};
+  windowBox.translate(-pMonitor->m_position + PWINDOW->m_floatingOffset);
+  windowBox.scale(pMonitor->m_scale).round();
+
   g_pHyprRenderer->disableScissor();
   g_pHyprRenderer->m_renderData.currentWindow = m_window;
 
@@ -185,11 +191,14 @@ void CBoxShadowsDecoration::render(PHLMONITOR pMonitor, float const &a) {
 
     box.scale(pMonitor->m_scale).round();
 
-    // TODO: Handle ignore_window case
-
-    drawShadowInternal(box, (ROUNDING + PSPREADRADIUS) * pMonitor->m_scale,
-                       ROUNDINGPOWER, PBLURRADIUS * pMonitor->m_scale, PCOLOR,
-                       a);
+    if (PIGNOREWINDOW)
+      drawShadowClipped(
+          box, windowBox, (ROUNDING + PSPREADRADIUS) * pMonitor->m_scale,
+          ROUNDINGPOWER, PBLURRADIUS * pMonitor->m_scale, PCOLOR, a);
+    else
+      drawShadowInternal(box, (ROUNDING + PSPREADRADIUS) * pMonitor->m_scale,
+                         ROUNDINGPOWER, PBLURRADIUS * pMonitor->m_scale, PCOLOR,
+                         a);
   }
 
   if (m_extents != m_reportedExtents)
@@ -215,4 +224,41 @@ void CBoxShadowsDecoration::drawShadowInternal(const CBox &box, int round,
 
   g_pHyprRenderer->drawShadow(box, round, roundingPower, 2 * blurRadius,
                               Config::CGradientValueData{color}, a);
+}
+
+void CBoxShadowsDecoration::drawShadowClipped(const CBox &shadowBox,
+                                              const CBox &windowBox, int round,
+                                              float roundingPower,
+                                              int blurRadius, CHyprColor color,
+                                              float a) {
+  if (!shadowBox.overlaps(windowBox)) {
+    drawShadowInternal(shadowBox, round, roundingPower, blurRadius, color, a);
+    return;
+  }
+
+  const auto drawStrip = [&](const CBox &strip) {
+    if (strip.width < 1 || strip.height < 1)
+      return;
+    Render::GL::g_pHyprOpenGL->scissor(strip);
+    drawShadowInternal(shadowBox, round, roundingPower, blurRadius, color, a);
+  };
+
+  const CBox top = {shadowBox.x, shadowBox.y, shadowBox.width,
+                    windowBox.y - shadowBox.y};
+  const CBox bottom = {
+      shadowBox.x, windowBox.y + windowBox.height, shadowBox.width,
+      shadowBox.y + shadowBox.height - windowBox.y - windowBox.height};
+  const CBox left = {shadowBox.x, windowBox.y, windowBox.x - shadowBox.x,
+                     windowBox.height};
+  const CBox right = {windowBox.x + windowBox.width, windowBox.y,
+                      shadowBox.x + shadowBox.width - windowBox.x -
+                          windowBox.width,
+                      windowBox.height};
+
+  drawStrip(top);
+  drawStrip(bottom);
+  drawStrip(left);
+  drawStrip(right);
+
+  Render::GL::g_pHyprOpenGL->scissor(nullptr);
 }
