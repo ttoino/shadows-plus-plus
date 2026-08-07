@@ -6,7 +6,7 @@
 class CBoxShadowsDecoration : public IHyprWindowDecoration {
 public:
   CBoxShadowsDecoration(PHLWINDOW);
-  virtual ~CBoxShadowsDecoration() = default;
+  virtual ~CBoxShadowsDecoration();
 
   virtual SDecorationPositioningInfo getPositioningInfo();
 

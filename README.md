@@ -113,3 +113,17 @@ hl.plugin.shadows.set_count(3)
 ```
 
 All color, offset, and numeric values accept the same formats as the rest of the Hyprland configuration.
+
+## Tests
+
+Unit tests use GoogleTest:
+
+```bash
+make test
+```
+
+CI also runs a NixOS VM integration test via:
+
+```bash
+nix flake check --print-build-logs
+```

@@ -1,5 +1,6 @@
 #include "CBoxShadowsDecoration.hpp"
 #include "CBoxShadowsPassElement.hpp"
+#include "geometry.hpp"
 #include "globals.hpp"
 
 #include <algorithm>
@@ -11,7 +12,13 @@
 #include <hyprland/src/state/MonitorState.hpp>
 
 CBoxShadowsDecoration::CBoxShadowsDecoration(PHLWINDOW pWindow)
-    : IHyprWindowDecoration(pWindow), m_window(pWindow) {}
+    : IHyprWindowDecoration(pWindow), m_window(pWindow) {
+  g_pShadowDecorations.insert(this);
+}
+
+CBoxShadowsDecoration::~CBoxShadowsDecoration() {
+  g_pShadowDecorations.erase(this);
+}
 
 eDecorationType CBoxShadowsDecoration::getDecorationType() {
   return DECORATION_CUSTOM;
@@ -254,22 +261,13 @@ void CBoxShadowsDecoration::drawShadowClipped(
                        a);
   };
 
-  const CBox top = {shadowBox.x, shadowBox.y, shadowBox.width,
-                    windowBox.y - shadowBox.y};
-  const CBox bottom = {
-      shadowBox.x, windowBox.y + windowBox.height, shadowBox.width,
-      shadowBox.y + shadowBox.height - windowBox.y - windowBox.height};
-  const CBox left = {shadowBox.x, windowBox.y, windowBox.x - shadowBox.x,
-                     windowBox.height};
-  const CBox right = {windowBox.x + windowBox.width, windowBox.y,
-                      shadowBox.x + shadowBox.width - windowBox.x -
-                          windowBox.width,
-                      windowBox.height};
+  const auto strips = ShadowsPlusPlus::Geometry::computeShadowClippingStrips(
+      shadowBox, windowBox);
 
-  drawStrip(top);
-  drawStrip(bottom);
-  drawStrip(left);
-  drawStrip(right);
+  drawStrip(strips.top);
+  drawStrip(strips.bottom);
+  drawStrip(strips.left);
+  drawStrip(strips.right);
 
   Render::GL::g_pHyprOpenGL->scissor(nullptr);
 }

@@ -33,6 +33,10 @@
         inherit (pkgsFor.${system}.hyprlandPlugins)
           shadows-plus-plus
           ;
+
+        shadows-plus-plus-tests = pkgsFor.${system}.hyprlandPlugins.shadows-plus-plus.override {
+          withTests = true;
+        };
       });
 
       overlays = {
@@ -45,11 +49,14 @@
         };
       };
 
-      checks = eachSystem (system: self.packages.${system});
+      checks = eachSystem (system:
+        self.packages.${system}
+        // import ./nix/tests { inherit self hyprland; } pkgsFor.${system}
+      );
 
       devShells = eachSystem (
         system: with pkgsFor.${system}; {
-          default = mkShell.override { stdenv = gcc14Stdenv; } {
+          default = mkShell.override { stdenv = gcc16Stdenv; } {
             name = "shadows-plus-plus";
             buildInputs = [ hyprland.packages.${system}.hyprland-debug ];
             inputsFrom = [ hyprland.packages.${system}.hyprland-debug ];

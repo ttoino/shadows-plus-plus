@@ -8,8 +8,12 @@
 #include <hyprland/src/config/values/types/IntValue.hpp>
 #include <hyprland/src/config/values/types/Vec2Value.hpp>
 #include <hyprland/src/plugins/PluginAPI.hpp>
+#include <set>
 
 inline HANDLE PHANDLE = nullptr;
+
+class CBoxShadowsDecoration;
+inline std::set<CBoxShadowsDecoration *> g_pShadowDecorations;
 
 struct SVars {
   SP<Config::Values::CIntValue> addShadows;
