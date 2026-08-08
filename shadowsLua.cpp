@@ -18,8 +18,10 @@ static int luaShadowsTestShadowCount(lua_State *L) {
 }
 
 void ShadowsPlusPlus::registerLuaFunctions() {
-  HyprlandAPI::addLuaFunction(PHANDLE, "shadows", "_test_decoration_count",
+  HyprlandAPI::addLuaFunction(PHANDLE, "shadows_plus_plus",
+                              "_test_decoration_count",
                               ::luaShadowsTestDecorationCount);
-  HyprlandAPI::addLuaFunction(PHANDLE, "shadows", "_test_shadow_count",
+  HyprlandAPI::addLuaFunction(PHANDLE, "shadows_plus_plus",
+                              "_test_shadow_count",
                               ::luaShadowsTestShadowCount);
 }

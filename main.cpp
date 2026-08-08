@@ -45,25 +45,43 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
       1, Config::Values::SIntValueOptions{.min = 0, .max = 10});
   HyprlandAPI::addConfigValueV2(PHANDLE, vars.addShadows);
 
+  static std::array<std::string, 10> shadowColorNames;
+  static std::array<std::string, 10> shadowOffsetNames;
+  static std::array<std::string, 10> shadowBlurRadiusNames;
+  static std::array<std::string, 10> shadowSpreadRadiusNames;
+  static std::array<std::string, 10> shadowIgnoreWindowNames;
+  static std::array<std::string, 10> shadowScaleNames;
+  static std::array<std::string, 10> shadowSharpNames;
+
   for (size_t i = 0; i < 10; ++i) {
     const std::string base =
         "plugin:shadows-plus-plus:shadow_" + std::to_string(i + 1);
+
+    shadowColorNames[i] = base + ":color";
+    shadowOffsetNames[i] = base + ":offset";
+    shadowBlurRadiusNames[i] = base + ":blur_radius";
+    shadowSpreadRadiusNames[i] = base + ":spread_radius";
+    shadowIgnoreWindowNames[i] = base + ":ignore_window";
+    shadowScaleNames[i] = base + ":scale";
+    shadowSharpNames[i] = base + ":sharp";
+
     vars.shadowColors[i] = makeShared<Config::Values::CGradientValue>(
-        (base + ":color").c_str(), "Color of the shadow",
+        shadowColorNames[i].c_str(), "Color of the shadow",
         CHyprColor{0xee1a1a1a});
     vars.shadowOffsets[i] = makeShared<Config::Values::CVec2Value>(
-        (base + ":offset").c_str(), "Offset of the shadow", Config::VEC2{0, 0});
+        shadowOffsetNames[i].c_str(), "Offset of the shadow",
+        Config::VEC2{0, 0});
     vars.shadowBlurRadii[i] = makeShared<Config::Values::CIntValue>(
-        (base + ":blur_radius").c_str(), "Blur radius of the shadow", 3);
+        shadowBlurRadiusNames[i].c_str(), "Blur radius of the shadow", 3);
     vars.shadowSpreadRadii[i] = makeShared<Config::Values::CIntValue>(
-        (base + ":spread_radius").c_str(), "Spread radius of the shadow", 4);
+        shadowSpreadRadiusNames[i].c_str(), "Spread radius of the shadow", 4);
     vars.shadowIgnoreWindows[i] = makeShared<Config::Values::CBoolValue>(
-        (base + ":ignore_window").c_str(),
+        shadowIgnoreWindowNames[i].c_str(),
         "Whether the shadow ignores the window", true);
     vars.shadowScales[i] = makeShared<Config::Values::CFloatValue>(
-        (base + ":scale").c_str(), "Scale of the shadow", 1.f);
+        shadowScaleNames[i].c_str(), "Scale of the shadow", 1.f);
     vars.shadowSharps[i] = makeShared<Config::Values::CBoolValue>(
-        (base + ":sharp").c_str(), "Whether the shadow is sharp", false);
+        shadowSharpNames[i].c_str(), "Whether the shadow is sharp", false);
 
     HyprlandAPI::addConfigValueV2(PHANDLE, vars.shadowColors[i]);
     HyprlandAPI::addConfigValueV2(PHANDLE, vars.shadowOffsets[i]);
@@ -74,9 +92,9 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
     HyprlandAPI::addConfigValueV2(PHANDLE, vars.shadowSharps[i]);
   }
 
-  HyprlandAPI::reloadConfig();
-
   ShadowsPlusPlus::registerLuaFunctions();
+
+  HyprlandAPI::reloadConfig();
 
   static auto P = Event::bus()->m_events.window.open.listen(
       [&](PHLWINDOW window) { onNewWindow(window); });
