@@ -29,6 +29,18 @@ public:
   void render(PHLMONITOR, float const &a);
 
 private:
+  struct SShadowRenderData {
+    bool valid = false;
+
+    CBox box;
+    int rounding = 0;
+    float roundingPower = 0.F;
+    int blurRadius = 0;
+
+    const Config::CGradientValueData *color = nullptr;
+    bool sharp = false;
+  };
+
   SBoxExtents m_extents;
   SBoxExtents m_reportedExtents;
 
@@ -40,13 +52,14 @@ private:
   CBox m_lastWindowBox = {0};
   CBox m_lastWindowBoxWithDecos = {0};
 
+  bool canRender(PHLMONITOR pMonitor);
+
+  std::vector<SShadowRenderData> getRenderData(PHLMONITOR pMonitor);
+
+  void reposition();
+
   void drawShadowInternal(const CBox &box, int round, float roundingPower,
                           int blurRadius,
                           const Config::CGradientValueData &grad, bool sharp,
                           float a);
-
-  void drawShadowClipped(const CBox &shadowBox, const CBox &windowBox,
-                         int round, float roundingPower, int blurRadius,
-                         const Config::CGradientValueData &grad, bool sharp,
-                         float a);
 };

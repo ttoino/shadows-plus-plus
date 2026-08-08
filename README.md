@@ -22,7 +22,7 @@ plugin:shadows-plus-plus {
          color = rgba(0,0,0,.15)
      }
 
-     # Also supports :scale, :ignore_window, :sharp like the default shadows
+     # Also supports :scale and :sharp like the default shadows
      # :color also accepts gradient syntax, e.g.
      # color = rgba(ff0000ff) rgba(00ff00ff) 45deg
  }

@@ -1,6 +1,5 @@
 #include "CBoxShadowsDecoration.hpp"
 #include "CBoxShadowsPassElement.hpp"
-#include "geometry.hpp"
 #include "globals.hpp"
 
 #include <algorithm>
@@ -9,6 +8,7 @@
 #include <hyprland/src/plugins/PluginAPI.hpp>
 #include <hyprland/src/render/OpenGL.hpp>
 #include <hyprland/src/render/Renderer.hpp>
+#include <hyprland/src/render/pass/RectPassElement.hpp>
 #include <hyprland/src/state/MonitorState.hpp>
 
 CBoxShadowsDecoration::CBoxShadowsDecoration(PHLWINDOW pWindow)
@@ -49,7 +49,7 @@ std::string CBoxShadowsDecoration::getDisplayName() { return "Box Shadows"; }
 static size_t shadowCount() {
   return std::clamp<Config::INTEGER>(
       vars.addShadows->value(), 0,
-      static_cast<Config::INTEGER>(vars.shadowIgnoreWindows.size()));
+      static_cast<Config::INTEGER>(vars.shadowColors.size()));
 }
 
 void CBoxShadowsDecoration::damageEntire() {
@@ -75,21 +75,7 @@ void CBoxShadowsDecoration::damageEntire() {
     shadowBox.translate(PWORKSPACE->m_renderOffset->value());
   shadowBox.translate(PWINDOW->m_floatingOffset);
 
-  const auto ROUNDING = PWINDOW->rounding();
-  const auto ROUNDINGSIZE = ROUNDING - M_SQRT1_2 * ROUNDING + 1;
-
   CRegion shadowRegion(shadowBox);
-  if (std::all_of(vars.shadowIgnoreWindows.begin(),
-                  vars.shadowIgnoreWindows.begin() + NUMSHADOWS,
-                  [](const auto &shadow) { return shadow->value(); })) {
-    CBox surfaceBox = PWINDOW->getWindowMainSurfaceBox();
-    if (PWORKSPACE && PWORKSPACE->m_renderOffset->isBeingAnimated() &&
-        !PWINDOW->m_pinned)
-      surfaceBox.translate(PWORKSPACE->m_renderOffset->value());
-    surfaceBox.translate(PWINDOW->m_floatingOffset);
-    surfaceBox.expand(-ROUNDINGSIZE);
-    shadowRegion.subtract(CRegion(surfaceBox));
-  }
 
   for (auto const &m : State::monitorState()->monitors()) {
     if (!g_pHyprRenderer->shouldRenderWindow(PWINDOW, m)) {
@@ -122,17 +108,23 @@ void CBoxShadowsDecoration::draw(PHLMONITOR pMonitor, float const &a) {
   g_pHyprRenderer->addPassElement(makeUnique<CBoxShadowsPassElement>(data));
 }
 
-void CBoxShadowsDecoration::render(PHLMONITOR pMonitor, float const &a) {
+bool CBoxShadowsDecoration::canRender(PHLMONITOR pMonitor) {
   const auto PWINDOW = m_window.lock();
 
   if (!validMapped(PWINDOW) ||
       !PWINDOW->m_ruleApplicator->decorate().valueOrDefault() ||
       PWINDOW->m_ruleApplicator->noShadow().valueOrDefault())
-    return;
+    return false;
 
-  const size_t NUMSHADOWS = shadowCount();
-  if (NUMSHADOWS == 0)
-    return;
+  if (shadowCount() == 0)
+    return false;
+
+  return true;
+}
+
+std::vector<CBoxShadowsDecoration::SShadowRenderData>
+CBoxShadowsDecoration::getRenderData(PHLMONITOR pMonitor) {
+  const auto PWINDOW = m_window.lock();
 
   const auto BORDERSIZE = PWINDOW->getRealBorderSize();
   const auto ROUNDINGBASE = PWINDOW->rounding();
@@ -149,22 +141,14 @@ void CBoxShadowsDecoration::render(PHLMONITOR pMonitor, float const &a) {
   updateWindow(PWINDOW);
   m_lastWindowPos += WORKSPACEOFFSET;
 
-  CBox windowBox = {m_lastWindowPos.x, m_lastWindowPos.y, m_lastWindowSize.x,
-                    m_lastWindowSize.y};
-  windowBox.translate(-pMonitor->m_position + PWINDOW->m_floatingOffset);
-  windowBox.scale(pMonitor->m_scale).round();
+  std::vector<SShadowRenderData> data;
 
-  g_pHyprRenderer->disableScissor();
-  g_pHyprRenderer->m_renderData.currentWindow = m_window;
-
+  const size_t NUMSHADOWS = shadowCount();
   for (size_t i = 0; i < NUMSHADOWS; ++i) {
-    const auto &PCOLOR = vars.shadowColors[i]->value();
     const auto POFFSET = vars.shadowOffsets[i]->value();
     const auto PBLURRADIUS = vars.shadowBlurRadii[i]->value();
     const auto PSPREADRADIUS = vars.shadowSpreadRadii[i]->value();
-    const auto PIGNOREWINDOW = vars.shadowIgnoreWindows[i]->value();
     const auto PSCALE = std::clamp(vars.shadowScales[i]->value(), 0.f, 1.f);
-    const auto PSHARP = vars.shadowSharps[i]->value();
 
     const auto PSIZE = PBLURRADIUS + PSPREADRADIUS;
     CBox box = m_lastWindowBoxWithDecos;
@@ -198,20 +182,41 @@ void CBoxShadowsDecoration::render(PHLMONITOR pMonitor, float const &a) {
 
     box.scale(pMonitor->m_scale).round();
 
-    if (PIGNOREWINDOW)
-      drawShadowClipped(
-          box, windowBox, (ROUNDING + PSPREADRADIUS) * pMonitor->m_scale,
-          ROUNDINGPOWER, PBLURRADIUS * pMonitor->m_scale, PCOLOR, PSHARP, a);
-    else
-      drawShadowInternal(box, (ROUNDING + PSPREADRADIUS) * pMonitor->m_scale,
-                         ROUNDINGPOWER, PBLURRADIUS * pMonitor->m_scale, PCOLOR,
-                         PSHARP, a);
+    data.push_back({
+        .valid = true,
+        .box = box,
+        .rounding = static_cast<int>((ROUNDING + PSPREADRADIUS) * pMonitor->m_scale),
+        .roundingPower = ROUNDINGPOWER,
+        .blurRadius = static_cast<int>(PBLURRADIUS * pMonitor->m_scale),
+        .color = &vars.shadowColors[i]->value(),
+        .sharp = vars.shadowSharps[i]->value(),
+    });
   }
 
+  return data;
+}
+
+void CBoxShadowsDecoration::reposition() {
   if (m_extents != m_reportedExtents)
     g_pDecorationPositioner->repositionDeco(this);
 
   g_pHyprRenderer->m_renderData.currentWindow.reset();
+}
+
+void CBoxShadowsDecoration::render(PHLMONITOR pMonitor, float const &a) {
+  if (!canRender(pMonitor))
+    return;
+
+  g_pHyprRenderer->disableScissor();
+  g_pHyprRenderer->m_renderData.currentWindow = m_window;
+
+  const auto data = getRenderData(pMonitor);
+
+  for (const auto &shadow : data)
+    drawShadowInternal(shadow.box, shadow.rounding, shadow.roundingPower,
+                       shadow.blurRadius, *shadow.color, shadow.sharp, a);
+
+  reposition();
 }
 
 eDecorationLayer CBoxShadowsDecoration::getDecorationLayer() {
@@ -241,33 +246,4 @@ void CBoxShadowsDecoration::drawShadowInternal(
 
   g_pHyprRenderer->drawShadow(box, round, roundingPower, 2 * blurRadius, grad,
                               a);
-}
-
-void CBoxShadowsDecoration::drawShadowClipped(
-    const CBox &shadowBox, const CBox &windowBox, int round,
-    float roundingPower, int blurRadius, const Config::CGradientValueData &grad,
-    bool sharp, float a) {
-  if (!shadowBox.overlaps(windowBox)) {
-    drawShadowInternal(shadowBox, round, roundingPower, blurRadius, grad, sharp,
-                       a);
-    return;
-  }
-
-  const auto drawStrip = [&](const CBox &strip) {
-    if (strip.width < 1 || strip.height < 1)
-      return;
-    Render::GL::g_pHyprOpenGL->scissor(strip);
-    drawShadowInternal(shadowBox, round, roundingPower, blurRadius, grad, sharp,
-                       a);
-  };
-
-  const auto strips = ShadowsPlusPlus::Geometry::computeShadowClippingStrips(
-      shadowBox, windowBox);
-
-  drawStrip(strips.top);
-  drawStrip(strips.bottom);
-  drawStrip(strips.left);
-  drawStrip(strips.right);
-
-  Render::GL::g_pHyprOpenGL->scissor(nullptr);
 }

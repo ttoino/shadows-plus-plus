@@ -21,7 +21,6 @@ struct SVars {
   std::array<SP<Config::Values::CVec2Value>, 10> shadowOffsets;
   std::array<SP<Config::Values::CIntValue>, 10> shadowBlurRadii;
   std::array<SP<Config::Values::CIntValue>, 10> shadowSpreadRadii;
-  std::array<SP<Config::Values::CBoolValue>, 10> shadowIgnoreWindows;
   std::array<SP<Config::Values::CFloatValue>, 10> shadowScales;
   std::array<SP<Config::Values::CBoolValue>, 10> shadowSharps;
 };

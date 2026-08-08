@@ -49,7 +49,6 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
   static std::array<std::string, 10> shadowOffsetNames;
   static std::array<std::string, 10> shadowBlurRadiusNames;
   static std::array<std::string, 10> shadowSpreadRadiusNames;
-  static std::array<std::string, 10> shadowIgnoreWindowNames;
   static std::array<std::string, 10> shadowScaleNames;
   static std::array<std::string, 10> shadowSharpNames;
 
@@ -61,7 +60,6 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
     shadowOffsetNames[i] = base + ":offset";
     shadowBlurRadiusNames[i] = base + ":blur_radius";
     shadowSpreadRadiusNames[i] = base + ":spread_radius";
-    shadowIgnoreWindowNames[i] = base + ":ignore_window";
     shadowScaleNames[i] = base + ":scale";
     shadowSharpNames[i] = base + ":sharp";
 
@@ -75,9 +73,6 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
         shadowBlurRadiusNames[i].c_str(), "Blur radius of the shadow", 3);
     vars.shadowSpreadRadii[i] = makeShared<Config::Values::CIntValue>(
         shadowSpreadRadiusNames[i].c_str(), "Spread radius of the shadow", 4);
-    vars.shadowIgnoreWindows[i] = makeShared<Config::Values::CBoolValue>(
-        shadowIgnoreWindowNames[i].c_str(),
-        "Whether the shadow ignores the window", true);
     vars.shadowScales[i] = makeShared<Config::Values::CFloatValue>(
         shadowScaleNames[i].c_str(), "Scale of the shadow", 1.f);
     vars.shadowSharps[i] = makeShared<Config::Values::CBoolValue>(
@@ -87,7 +82,6 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
     HyprlandAPI::addConfigValueV2(PHANDLE, vars.shadowOffsets[i]);
     HyprlandAPI::addConfigValueV2(PHANDLE, vars.shadowBlurRadii[i]);
     HyprlandAPI::addConfigValueV2(PHANDLE, vars.shadowSpreadRadii[i]);
-    HyprlandAPI::addConfigValueV2(PHANDLE, vars.shadowIgnoreWindows[i]);
     HyprlandAPI::addConfigValueV2(PHANDLE, vars.shadowScales[i]);
     HyprlandAPI::addConfigValueV2(PHANDLE, vars.shadowSharps[i]);
   }

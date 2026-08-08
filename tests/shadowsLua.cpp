@@ -13,6 +13,6 @@ TEST(ShadowsLua, shadowKeyFormatsDoubleDigitIndex) {
 }
 
 TEST(ShadowsLua, shadowKeyFormatsArbitraryProperty) {
-  EXPECT_EQ(ShadowsPlusPlus::Lua::shadowKey(3, "ignore_window"),
-            "plugin:shadows-plus-plus:shadow_3:ignore_window");
+  EXPECT_EQ(ShadowsPlusPlus::Lua::shadowKey(3, "sharp"),
+            "plugin:shadows-plus-plus:shadow_3:sharp");
 }

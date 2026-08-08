@@ -22,11 +22,10 @@ C++23 Hyprland plugin that adds CSS-like box shadows to windows via window decor
 
 ## Architecture
 
-- `main.cpp` — `PLUGIN_INIT`, `PLUGIN_EXIT`, `PLUGIN_API_VERSION`; registers up to 10 shadow config layers via `Config::Values::CIntValue`/`CGradientValue`/`CVec2Value`/`CBoolValue`/`CFloatValue` (Config V2 API), hooks window open events, and registers Lua helpers
-- `CBoxShadowsDecoration.{hpp,cpp}` — `IHyprWindowDecoration` implementation; renders shadows via `g_pHyprRenderer->drawShadow` or `CRectPassElement` for sharp shadows
+- `main.cpp` — `PLUGIN_INIT`, `PLUGIN_EXIT`, `PLUGIN_API_VERSION`; registers up to 10 shadow config layers via `Config::Values::CIntValue`/`CGradientValue`/`CVec2Value`/`CFloatValue`/`CBoolValue` (Config V2 API), hooks window open events, and registers Lua helpers
+- `CBoxShadowsDecoration.{hpp,cpp}` — `IHyprWindowDecoration` implementation; mirrors Hyprland's native drop-shadow decoration structure (`canRender`/`getRenderData`/`render`/`reposition`) and renders shadows via `g_pHyprRenderer->drawShadow` or `CRectPassElement` for sharp shadows
 - `CBoxShadowsPassElement.{hpp,cpp}` — `IPassElement` for the custom render pass
-- `shadowsLua.{hpp,cpp}` — Lua helper implementations for `hl.plugin.shadows.*`; also exposes `hl.plugin.shadows._test_*` helpers
-- `geometry.{hpp,cpp}` — isolated geometry helpers (currently shadow clipping strips) shared with unit tests
+- `shadowsLua.{hpp,cpp}` — Lua helper implementations for `hl.plugin.shadows_plus_plus.*`; also exposes `hl.plugin.shadows_plus_plus._test_*` helpers
 - `globals.hpp` — shared `PHANDLE`, typed `SVars` config value struct, and decoration registry
 - `tests/` — GTest unit tests
 - `nix/tests/default.nix` — NixOS VM integration test
