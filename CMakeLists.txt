@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.27)
 
-project(borders-plus-plus
+project(shadows-plus-plus
     DESCRIPTION "shadows-plus-plus plugin for Hyprland"
     VERSION 0.1
 )
@@ -39,7 +39,7 @@ if(BUILD_TESTING)
     pkg_check_modules(testdeps REQUIRED IMPORTED_TARGET hyprutils)
 
     file(GLOB_RECURSE TESTFILES "tests/*.cpp")
-    add_executable(shadows-plus-plus-tests ${TESTFILES} geometry.cpp)
+    add_executable(shadows-plus-plus-tests ${TESTFILES})
     target_include_directories(shadows-plus-plus-tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
     target_link_libraries(shadows-plus-plus-tests PRIVATE PkgConfig::testdeps GTest::gtest_main)
 

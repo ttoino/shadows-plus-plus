@@ -17,10 +17,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
       - name: Format
-        run: clang-format -Werror -i --dry-run *.[ch]pp
+        run: find . -name '*.[ch]pp' -not -path './.git/*' -not -path './.direnv/*' -not -path './result/*' -exec clang-format -Werror -i --dry-run {} +
 
-  build:
-    name: Build
+  check:
+    name: Check
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -33,5 +33,5 @@ jobs:
           name: toino
           authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
           extraPullNames: hyprland,nix-community
-      - name: Build
+      - name: Check
         run: nix flake check --all-systems --keep-going --print-build-logs

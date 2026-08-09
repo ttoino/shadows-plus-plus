@@ -185,7 +185,8 @@ CBoxShadowsDecoration::getRenderData(PHLMONITOR pMonitor) {
     data.push_back({
         .valid = true,
         .box = box,
-        .rounding = static_cast<int>((ROUNDING + PSPREADRADIUS) * pMonitor->m_scale),
+        .rounding =
+            static_cast<int>((ROUNDING + PSPREADRADIUS) * pMonitor->m_scale),
         .roundingPower = ROUNDINGPOWER,
         .blurRadius = static_cast<int>(PBLURRADIUS * pMonitor->m_scale),
         .color = &vars.shadowColors[i]->value(),

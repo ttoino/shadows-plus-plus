@@ -12,7 +12,7 @@ C++23 Hyprland plugin that adds CSS-like box shadows to windows via window decor
 
 ## Format
 
-- `clang-format -Werror -i --dry-run *.[ch]pp`
+- `find . -name '*.[ch]pp' -not -path './.git/*' -not -path './.direnv/*' -not -path './result/*' -exec clang-format -Werror -i --dry-run {} +`
 - **No `.clang-format` config exists** — relies on system / default style
 
 ## Dev Environment
