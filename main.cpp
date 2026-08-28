@@ -4,7 +4,8 @@
 #include <hyprland/src/Compositor.hpp>
 #include <hyprland/src/config/ConfigManager.hpp>
 #include <hyprland/src/desktop/state/WindowState.hpp>
-#include <hyprland/src/desktop/view/Window.hpp>
+#include <hyprland/src/desktop/view/window/Window.hpp>
+#include <hyprland/src/desktop/view/window/WindowPresentation.hpp>
 #include <hyprland/src/event/EventBus.hpp>
 #include <hyprland/src/render/Renderer.hpp>
 
@@ -16,13 +17,13 @@
 APICALL EXPORT std::string PLUGIN_API_VERSION() { return HYPRLAND_API_VERSION; }
 
 static void onNewWindow(PHLWINDOW window) {
-  if (std::ranges::any_of(window->m_windowDecorations, [](const auto &d) {
-        return d->getDisplayName() == "Box Shadows";
-      }))
+  if (std::ranges::any_of(
+          window->presentation().decorations(),
+          [](const auto &d) { return d->getDisplayName() == "Box Shadows"; }))
     return;
 
   HyprlandAPI::addWindowDecoration(PHANDLE, window,
-                                   makeUnique<CBoxShadowsDecoration>(window));
+                                   makeShared<CBoxShadowsDecoration>(window));
 }
 
 APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
@@ -95,11 +96,11 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
 
   // add deco to existing windows
   for (auto &w : Desktop::windowState()->windows()) {
-    if (w->isHidden() || !w->m_isMapped)
+    if (w->isHidden() || !validMapped(w))
       continue;
 
     HyprlandAPI::addWindowDecoration(PHANDLE, w,
-                                     makeUnique<CBoxShadowsDecoration>(w));
+                                     makeShared<CBoxShadowsDecoration>(w));
   }
 
   HyprlandAPI::addNotification(PHANDLE,

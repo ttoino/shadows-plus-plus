@@ -4,7 +4,8 @@
 
 #include <algorithm>
 #include <hyprland/src/Compositor.hpp>
-#include <hyprland/src/desktop/view/Window.hpp>
+#include <hyprland/src/desktop/view/window/Window.hpp>
+#include <hyprland/src/desktop/view/window/WindowPresentation.hpp>
 #include <hyprland/src/plugins/PluginAPI.hpp>
 #include <hyprland/src/render/OpenGL.hpp>
 #include <hyprland/src/render/Renderer.hpp>
@@ -71,9 +72,9 @@ void CBoxShadowsDecoration::damageEntire() {
 
   const auto PWORKSPACE = PWINDOW->m_workspace;
   if (PWORKSPACE && PWORKSPACE->m_renderOffset->isBeingAnimated() &&
-      !PWINDOW->m_pinned)
+      !(PWINDOW->m_state & Desktop::View::WINDOW_STATE_PINNED))
     shadowBox.translate(PWORKSPACE->m_renderOffset->value());
-  shadowBox.translate(PWINDOW->m_floatingOffset);
+  shadowBox.translate(PWINDOW->presentation().floatingOffset());
 
   CRegion shadowRegion(shadowBox);
 
@@ -126,17 +127,18 @@ std::vector<CBoxShadowsDecoration::SShadowRenderData>
 CBoxShadowsDecoration::getRenderData(PHLMONITOR pMonitor) {
   const auto PWINDOW = m_window.lock();
 
-  const auto BORDERSIZE = PWINDOW->getRealBorderSize();
-  const auto ROUNDINGBASE = PWINDOW->rounding();
-  const auto ROUNDINGPOWER = PWINDOW->roundingPower();
+  const auto BORDERSIZE = PWINDOW->presentation().borderSize();
+  const auto ROUNDINGBASE = PWINDOW->presentation().rounding();
+  const auto ROUNDINGPOWER = PWINDOW->presentation().roundingPower();
   const auto CORRECTIONOFFSET =
       BORDERSIZE * (M_SQRT2 - 1) * std::max(2.0 - ROUNDINGPOWER, 0.0);
   const auto ROUNDING =
       ROUNDINGBASE > 0 ? (ROUNDINGBASE + BORDERSIZE) - CORRECTIONOFFSET : 0;
   const auto PWORKSPACE = PWINDOW->m_workspace;
-  const auto WORKSPACEOFFSET = PWORKSPACE && !PWINDOW->m_pinned
-                                   ? PWORKSPACE->m_renderOffset->value()
-                                   : Vector2D();
+  const auto WORKSPACEOFFSET =
+      PWORKSPACE && !(PWINDOW->m_state & Desktop::View::WINDOW_STATE_PINNED)
+          ? PWORKSPACE->m_renderOffset->value()
+          : Vector2D();
 
   updateWindow(PWINDOW);
   m_lastWindowPos += WORKSPACEOFFSET;
@@ -175,7 +177,7 @@ CBoxShadowsDecoration::getRenderData(PHLMONITOR pMonitor) {
                  box.y + box.height + pMonitor->m_position.y -
                      m_lastWindowPos.y - m_lastWindowSize.y + 2);
 
-    box.translate(PWINDOW->m_floatingOffset);
+    box.translate(PWINDOW->presentation().floatingOffset());
 
     if (box.width < 1 || box.height < 1)
       continue;
