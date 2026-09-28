@@ -1,0 +1,14 @@
+{
+    "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+    "extends": ["config:recommended"],
+    "dependencyDashboard": false,
+    "schedule": ["* 0-3 1 * *"],
+    "prConcurrentLimit": 4,
+    "packageRules": [
+        {
+            "groupName": "github actions",
+            "matchManagers": ["github-actions"],
+            "automerge": true
+        }
+    ]
+}

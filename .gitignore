@@ -1,5 +1,9 @@
-.direnv/
+.direnv
 result
+result-*
+.env
+.env.*
 
-**/*.so
-shadows-plus-plus-tests
+# OS
+.DS_Store
+Thumbs.db
