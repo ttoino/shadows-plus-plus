@@ -4,6 +4,11 @@
     "dependencyDashboard": false,
     "schedule": ["* 0-3 1 * *"],
     "prConcurrentLimit": 4,
+    "lockFileMaintenance": {
+        "enabled": true,
+        "automerge": true,
+        "schedule": ["* 0-3 1 * *"]
+    },
     "packageRules": [
         {
             "groupName": "github actions",
