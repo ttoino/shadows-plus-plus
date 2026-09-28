@@ -1,0 +1,7 @@
+# Changes here will be overwritten by Copier
+_commit: d3b0a5b
+_src_path: /home/toino/Projects/github/ttoino/templates
+description: C++23 Hyprland plugin for CSS-like box shadows
+name: shadows-plus-plus
+project_type: general
+
