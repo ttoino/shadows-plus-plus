@@ -33,4 +33,4 @@ C++23 Hyprland plugin that adds CSS-like box shadows to windows via window decor
 ## Critical Constraints
 
 - **Exact Hyprland version match**: `PLUGIN_INIT` compares `__hyprland_api_get_hash()` to `__hyprland_api_get_client_hash()` and throws if they differ. Plugin must be built against the exact Hyprland version it runs on.
-- **Currently pinned to Hyprland 0.56.0+** (`88c6386994c960006e14c7bfa4ccfee873252882` via flake.lock).
+- **Pinned to a specific Hyprland version** via `flake.lock`; the plugin must be rebuilt when that version changes.
