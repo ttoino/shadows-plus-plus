@@ -1,6 +1,7 @@
 #pragma once
 
 #include <hyprland/src/config/shared/complex/ComplexDataTypes.hpp>
+#include <hyprland/src/render/WindowRenderPresentation.hpp>
 #include <hyprland/src/render/decorations/IHyprWindowDecoration.hpp>
 
 class CBoxShadowsDecoration : public IHyprWindowDecoration {
@@ -12,7 +13,9 @@ public:
 
   virtual void onPositioningReply(const SDecorationPositioningReply &reply);
 
-  virtual void draw(PHLMONITOR, float const &a);
+  virtual void
+  draw(Render::CRenderContext &ctx, PHLMONITOR, float const &a,
+       const Render::SWindowRenderPresentation &presentation) override;
 
   virtual eDecorationType getDecorationType();
 
@@ -26,7 +29,8 @@ public:
 
   virtual std::string getDisplayName();
 
-  void render(PHLMONITOR, float const &a);
+  void render(Render::CRenderContext &ctx, PHLMONITOR, float const &a,
+              const Render::SWindowRenderPresentation &presentation);
 
 private:
   struct SShadowRenderData {
@@ -56,10 +60,12 @@ private:
 
   std::vector<SShadowRenderData> getRenderData(PHLMONITOR pMonitor);
 
-  void reposition();
+  void reposition(Render::CRenderContext &ctx);
 
-  void drawShadowInternal(const CBox &box, int round, float roundingPower,
-                          int blurRadius,
-                          const Config::CGradientValueData &grad, bool sharp,
-                          float a);
+  void
+  drawShadowInternal(Render::CRenderContext &ctx, const CBox &box, int round,
+                     float roundingPower, int blurRadius,
+                     const Config::CGradientValueData &grad, bool sharp,
+                     float a,
+                     const Render::SWindowRenderPresentation &presentation);
 };

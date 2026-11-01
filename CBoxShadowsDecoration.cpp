@@ -26,13 +26,19 @@ eDecorationType CBoxShadowsDecoration::getDecorationType() {
 }
 
 SDecorationPositioningInfo CBoxShadowsDecoration::getPositioningInfo() {
+  const auto PWINDOW = m_window.lock();
+
   SDecorationPositioningInfo info;
   info.policy = DECORATION_POSITION_ABSOLUTE;
-  info.desiredExtents = m_extents;
   info.edges = DECORATION_EDGE_BOTTOM | DECORATION_EDGE_LEFT |
                DECORATION_EDGE_RIGHT | DECORATION_EDGE_TOP;
 
-  m_reportedExtents = m_extents;
+  if (!PWINDOW->m_ruleApplicator->decorate().valueOrDefault())
+    info.desiredExtents = {{0, 0}, {0, 0}};
+  else
+    info.desiredExtents = m_extents;
+
+  m_reportedExtents = info.desiredExtents;
   return info;
 }
 
@@ -102,11 +108,15 @@ void CBoxShadowsDecoration::updateWindow(PHLWINDOW pWindow) {
       g_pDecorationPositioner->getBoxWithIncludedDecos(pWindow);
 }
 
-void CBoxShadowsDecoration::draw(PHLMONITOR pMonitor, float const &a) {
+void CBoxShadowsDecoration::draw(
+    Render::CRenderContext &ctx, PHLMONITOR pMonitor, float const &a,
+    const Render::SWindowRenderPresentation &presentation) {
   CBoxShadowsPassElement::SShadowData data;
   data.deco = this;
   data.a = a;
-  g_pHyprRenderer->addPassElement(makeUnique<CBoxShadowsPassElement>(data));
+  data.presentation = presentation;
+  g_pHyprRenderer->addPassElement(ctx,
+                                  makeUnique<CBoxShadowsPassElement>(data));
 }
 
 bool CBoxShadowsDecoration::canRender(PHLMONITOR pMonitor) {
@@ -199,27 +209,30 @@ CBoxShadowsDecoration::getRenderData(PHLMONITOR pMonitor) {
   return data;
 }
 
-void CBoxShadowsDecoration::reposition() {
+void CBoxShadowsDecoration::reposition(Render::CRenderContext &ctx) {
   if (m_extents != m_reportedExtents)
     g_pDecorationPositioner->repositionDeco(this);
 
-  g_pHyprRenderer->m_renderData.currentWindow.reset();
+  ctx.m_data.currentWindow.reset();
 }
 
-void CBoxShadowsDecoration::render(PHLMONITOR pMonitor, float const &a) {
+void CBoxShadowsDecoration::render(
+    Render::CRenderContext &ctx, PHLMONITOR pMonitor, float const &a,
+    const Render::SWindowRenderPresentation &presentation) {
   if (!canRender(pMonitor))
     return;
 
   g_pHyprRenderer->disableScissor();
-  g_pHyprRenderer->m_renderData.currentWindow = m_window;
+  ctx.m_data.currentWindow = m_window;
 
   const auto data = getRenderData(pMonitor);
 
   for (const auto &shadow : data)
-    drawShadowInternal(shadow.box, shadow.rounding, shadow.roundingPower,
-                       shadow.blurRadius, *shadow.color, shadow.sharp, a);
+    drawShadowInternal(ctx, shadow.box, shadow.rounding, shadow.roundingPower,
+                       shadow.blurRadius, *shadow.color, shadow.sharp, a,
+                       presentation);
 
-  reposition();
+  reposition(ctx);
 }
 
 eDecorationLayer CBoxShadowsDecoration::getDecorationLayer() {
@@ -227,8 +240,10 @@ eDecorationLayer CBoxShadowsDecoration::getDecorationLayer() {
 }
 
 void CBoxShadowsDecoration::drawShadowInternal(
-    const CBox &box, int round, float roundingPower, int blurRadius,
-    const Config::CGradientValueData &grad, bool sharp, float a) {
+    Render::CRenderContext &ctx, const CBox &box, int round,
+    float roundingPower, int blurRadius, const Config::CGradientValueData &grad,
+    bool sharp, float a,
+    const Render::SWindowRenderPresentation &presentation) {
   if (box.w < 1 || box.h < 1)
     return;
 
@@ -239,6 +254,7 @@ void CBoxShadowsDecoration::drawShadowInternal(
         grad.m_colors.empty() ? CHyprColor(0, 0, 0, 0) : grad.m_colors[0];
     flatColor.a *= a;
     g_pHyprRenderer->draw(
+        ctx,
         CRectPassElement::SRectData{.box = box,
                                     .color = flatColor,
                                     .round = round,
@@ -247,6 +263,6 @@ void CBoxShadowsDecoration::drawShadowInternal(
     return;
   }
 
-  g_pHyprRenderer->drawShadow(box, round, roundingPower, 2 * blurRadius, grad,
-                              a);
+  g_pHyprRenderer->drawShadow(ctx, box, round, roundingPower, 2 * blurRadius,
+                              grad, a, presentation);
 }

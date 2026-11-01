@@ -112,5 +112,5 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
 }
 
 APICALL EXPORT void PLUGIN_EXIT() {
-  g_pHyprRenderer->m_renderPass.removeAllOfType("CBoxShadowsPassElement");
+  g_pHyprRenderer->context().m_pass.removeAllOfType("CBoxShadowsPassElement");
 }

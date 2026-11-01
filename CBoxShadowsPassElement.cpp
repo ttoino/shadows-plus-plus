@@ -9,11 +9,17 @@ CBoxShadowsPassElement::CBoxShadowsPassElement(
   ;
 }
 
-std::vector<UP<IPassElement>> CBoxShadowsPassElement::draw() {
-  m_data.deco->render(g_pHyprRenderer->m_renderData.pMonitor.lock(), m_data.a);
+std::vector<UP<IPassElement>>
+CBoxShadowsPassElement::draw(Render::CRenderContext &ctx) {
+  m_data.deco->render(ctx, ctx.m_data.pMonitor.lock(), m_data.a,
+                      m_data.presentation);
   return {};
 }
 
-bool CBoxShadowsPassElement::needsLiveBlur() { return false; }
+bool CBoxShadowsPassElement::needsLiveBlur(Render::CRenderContext &ctx) {
+  return false;
+}
 
-bool CBoxShadowsPassElement::needsPrecomputeBlur() { return false; }
+bool CBoxShadowsPassElement::needsPrecomputeBlur(Render::CRenderContext &ctx) {
+  return false;
+}
