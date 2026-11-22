@@ -5,12 +5,13 @@
     "nix": {
         "enabled": true
     },
-    "schedule": ["* 0-3 1 * *"],
+    "schedule": ["* 0-3 * * *"],
+    "updateNotScheduled": false,
     "prConcurrentLimit": 4,
     "lockFileMaintenance": {
         "enabled": true,
         "automerge": true,
-        "schedule": ["* 0-3 1 * *"]
+        "schedule": ["* 0-3 * * *"]
     },
     "packageRules": [
         {
